@@ -1,0 +1,2 @@
+galaxy,omega_km_s_kpc,omega_err,chi2_reduced,rmse_km_s,n_points,converged,upsilon_disk,upsilon_bulge,method_version,flag_v_obs_lt_v_bary
+M33,6.9748631456034484,0.041827292540361494,72.90721459262653,31.053169102400453,58,True,0.5,0.7,v1_fixed_ML,False
