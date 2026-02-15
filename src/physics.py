@@ -373,6 +373,566 @@ def fit_omega(
     return result
 
 
+def fit_omega_quadrature(
+    radius: np.ndarray,
+    v_obs: np.ndarray,
+    v_err: np.ndarray,
+    v_bary: np.ndarray,
+    galaxy_id: str = "unknown",
+    method_version: str = "v1_quadrature",
+    upsilon_disk: float = 0.5,
+    upsilon_bulge: float = 0.7,
+    omega_bounds: tuple = (-50.0, 50.0),
+) -> OmegaFitResult:
+    """Fit the omega parameter using the quadrature (force-addition) model.
+
+    Model: V_model = sqrt(V_bary^2 + (omega * R)^2)
+
+    This treats omega*R as a dynamical force contribution whose potential
+    adds in quadrature with the baryonic potential, analogous to how
+    standard dark matter halo models combine with baryonic components
+    (e.g., Lelli et al. 2016).
+
+    Physical interpretation: omega acts as a background force field
+    (centrifugal-like) rather than a kinematic velocity boost.
+
+    Args:
+        radius: Radial positions (kpc).
+        v_obs: Observed velocities (km/s).
+        v_err: Velocity errors (km/s). Values <= 0 are replaced.
+        v_bary: Pre-computed baryonic velocity (km/s).
+        galaxy_id: Galaxy identifier for labeling.
+        method_version: Version string for reproducibility.
+        upsilon_disk: Mass-to-light ratio used for V_bary.
+        upsilon_bulge: Mass-to-light ratio used for V_bary.
+        omega_bounds: (lower, upper) bounds for omega in km/s/kpc.
+
+    Returns:
+        OmegaFitResult with all fit diagnostics and arrays.
+    """
+    radius = np.asarray(radius, dtype=np.float64)
+    v_obs = np.asarray(v_obs, dtype=np.float64)
+    v_err = np.asarray(v_err, dtype=np.float64)
+    v_bary = np.asarray(v_bary, dtype=np.float64)
+
+    n_points = len(radius)
+
+    # Replace zero/negative errors with minimum nonzero error (or 1.0 km/s)
+    positive_errs = v_err[v_err > 0]
+    min_err = float(np.min(positive_errs)) if len(positive_errs) > 0 else 1.0
+    v_err_safe = np.where(v_err > 0, v_err, min_err)
+    if np.any(v_err <= 0):
+        logger.warning(
+            "%s: replaced %d zero/negative errors with %.2f km/s",
+            galaxy_id,
+            np.sum(v_err <= 0),
+            min_err,
+        )
+
+    # Check for V_obs < V_bary at any radius
+    flag_v_obs_lt_v_bary = bool(np.any(v_obs < v_bary))
+
+    # Quadrature model: V = sqrt(V_bary^2 + (omega * R)^2)
+    def _model(r, omega):
+        return np.sqrt(v_bary**2 + (omega * r) ** 2)
+
+    try:
+        popt, pcov = curve_fit(
+            _model,
+            radius,
+            v_obs,
+            p0=[0.0],
+            sigma=v_err_safe,
+            absolute_sigma=True,
+            bounds=([omega_bounds[0]], [omega_bounds[1]]),
+        )
+        omega_best = float(popt[0])
+        omega_err = float(np.sqrt(np.diag(pcov))[0])
+        converged = True
+    except RuntimeError as e:
+        logger.warning("%s: curve_fit did not converge — %s", galaxy_id, e)
+        omega_best = float("nan")
+        omega_err = float("nan")
+        converged = False
+
+    # Compute diagnostics
+    v_model = _model(radius, omega_best)
+    residuals = v_obs - v_model
+    chi2 = float(np.sum((residuals / v_err_safe) ** 2))
+    dof = max(n_points - 1, 1)  # 1 free parameter
+    reduced_chi2 = chi2 / dof
+    rmse = float(np.sqrt(np.mean(residuals**2)))
+
+    result = OmegaFitResult(
+        galaxy_id=galaxy_id,
+        omega_value=omega_best,
+        omega_uncertainty=omega_err,
+        chi_squared=chi2,
+        reduced_chi_squared=reduced_chi2,
+        residuals_rmse=rmse,
+        n_points=n_points,
+        converged=converged,
+        flag_v_obs_lt_v_bary=flag_v_obs_lt_v_bary,
+        method_version=method_version,
+        upsilon_disk=upsilon_disk,
+        upsilon_bulge=upsilon_bulge,
+        v_bary=v_bary,
+        v_model=v_model,
+        residuals=residuals,
+    )
+
+    if converged:
+        logger.info(
+            "%s [quadrature]: omega=%.4f +/- %.4f km/s/kpc  chi2_r=%.2f  RMSE=%.2f km/s",
+            galaxy_id,
+            omega_best,
+            omega_err,
+            reduced_chi2,
+            rmse,
+        )
+
+    return result
+
+
+def fit_omega_tapered(
+    radius: np.ndarray,
+    v_obs: np.ndarray,
+    v_err: np.ndarray,
+    v_bary: np.ndarray,
+    galaxy_id: str = "unknown",
+    method_version: str = "v1_rational_taper",
+    upsilon_disk: float = 0.5,
+    upsilon_bulge: float = 0.7,
+    omega_bounds: tuple = (0.0, 50.0),
+    rt_bounds: tuple = (0.1, 50.0),
+) -> "TaperedFitResult":
+    """Fit the rational-taper (saturation) model to a rotation curve.
+
+    Model: V_model = V_bary + omega * R / (1 + R / R_t)
+
+    At small R the correction is linear (omega * R); at large R it
+    saturates to a constant velocity (omega * R_t).
+
+    Args:
+        radius: Radial positions (kpc).
+        v_obs: Observed velocities (km/s).
+        v_err: Velocity errors (km/s). Values <= 0 are replaced.
+        v_bary: Pre-computed baryonic velocity (km/s).
+        galaxy_id: Galaxy identifier for labeling.
+        method_version: Version string for reproducibility.
+        upsilon_disk: Mass-to-light ratio used for V_bary.
+        upsilon_bulge: Mass-to-light ratio used for V_bary.
+        omega_bounds: (lower, upper) bounds for omega in km/s/kpc.
+        rt_bounds: (lower, upper) bounds for R_t in kpc.
+
+    Returns:
+        TaperedFitResult with all fit diagnostics and arrays.
+    """
+    radius = np.asarray(radius, dtype=np.float64)
+    v_obs = np.asarray(v_obs, dtype=np.float64)
+    v_err = np.asarray(v_err, dtype=np.float64)
+    v_bary = np.asarray(v_bary, dtype=np.float64)
+
+    n_points = len(radius)
+
+    positive_errs = v_err[v_err > 0]
+    min_err = float(np.min(positive_errs)) if len(positive_errs) > 0 else 1.0
+    v_err_safe = np.where(v_err > 0, v_err, min_err)
+
+    flag_v_obs_lt_v_bary = bool(np.any(v_obs < v_bary))
+
+    def _model(r, omega, r_t):
+        return v_bary + omega * r / (1.0 + r / r_t)
+
+    try:
+        popt, pcov = curve_fit(
+            _model,
+            radius,
+            v_obs,
+            p0=[5.0, 5.0],
+            sigma=v_err_safe,
+            absolute_sigma=True,
+            bounds=(
+                [omega_bounds[0], rt_bounds[0]],
+                [omega_bounds[1], rt_bounds[1]],
+            ),
+        )
+        omega_best = float(popt[0])
+        rt_best = float(popt[1])
+        perr = np.sqrt(np.diag(pcov))
+        omega_err = float(perr[0])
+        rt_err = float(perr[1])
+        converged = True
+    except RuntimeError as e:
+        logger.warning("%s: rational taper fit did not converge — %s", galaxy_id, e)
+        omega_best = rt_best = omega_err = rt_err = float("nan")
+        converged = False
+
+    v_model = _model(radius, omega_best, rt_best)
+    residuals = v_obs - v_model
+    chi2 = float(np.sum((residuals / v_err_safe) ** 2))
+    dof = max(n_points - 2, 1)  # 2 free parameters
+    reduced_chi2 = chi2 / dof
+    rmse = float(np.sqrt(np.mean(residuals**2)))
+
+    result = TaperedFitResult(
+        galaxy_id=galaxy_id,
+        model_name="rational_taper",
+        omega_value=omega_best,
+        omega_uncertainty=omega_err,
+        rt_value=rt_best,
+        rt_uncertainty=rt_err,
+        chi_squared=chi2,
+        reduced_chi_squared=reduced_chi2,
+        residuals_rmse=rmse,
+        n_points=n_points,
+        n_params=2,
+        converged=converged,
+        flag_v_obs_lt_v_bary=flag_v_obs_lt_v_bary,
+        method_version=method_version,
+        upsilon_disk=upsilon_disk,
+        upsilon_bulge=upsilon_bulge,
+        v_bary=v_bary,
+        v_model=v_model,
+        residuals=residuals,
+    )
+
+    if converged:
+        logger.info(
+            "%s [rational taper]: omega=%.4f +/- %.4f  R_t=%.4f +/- %.4f  chi2_r=%.2f  RMSE=%.2f",
+            galaxy_id, omega_best, omega_err, rt_best, rt_err, reduced_chi2, rmse,
+        )
+
+    return result
+
+
+def fit_omega_tanh(
+    radius: np.ndarray,
+    v_obs: np.ndarray,
+    v_err: np.ndarray,
+    v_bary: np.ndarray,
+    galaxy_id: str = "unknown",
+    method_version: str = "v1_tanh_taper",
+    upsilon_disk: float = 0.5,
+    upsilon_bulge: float = 0.7,
+    vmax_bounds: tuple = (0.0, 500.0),
+    rt_bounds: tuple = (0.1, 50.0),
+) -> "TaperedFitResult":
+    """Fit the tanh-taper (shear) model to a rotation curve.
+
+    Model: V_model = V_bary + V_max * tanh(R / R_t)
+
+    At small R the correction is approximately linear (V_max * R / R_t);
+    at large R it saturates to V_max.
+
+    Args:
+        radius: Radial positions (kpc).
+        v_obs: Observed velocities (km/s).
+        v_err: Velocity errors (km/s). Values <= 0 are replaced.
+        v_bary: Pre-computed baryonic velocity (km/s).
+        galaxy_id: Galaxy identifier for labeling.
+        method_version: Version string for reproducibility.
+        upsilon_disk: Mass-to-light ratio used for V_bary.
+        upsilon_bulge: Mass-to-light ratio used for V_bary.
+        vmax_bounds: (lower, upper) bounds for V_max in km/s.
+        rt_bounds: (lower, upper) bounds for R_t in kpc.
+
+    Returns:
+        TaperedFitResult with all fit diagnostics and arrays.
+    """
+    radius = np.asarray(radius, dtype=np.float64)
+    v_obs = np.asarray(v_obs, dtype=np.float64)
+    v_err = np.asarray(v_err, dtype=np.float64)
+    v_bary = np.asarray(v_bary, dtype=np.float64)
+
+    n_points = len(radius)
+
+    positive_errs = v_err[v_err > 0]
+    min_err = float(np.min(positive_errs)) if len(positive_errs) > 0 else 1.0
+    v_err_safe = np.where(v_err > 0, v_err, min_err)
+
+    flag_v_obs_lt_v_bary = bool(np.any(v_obs < v_bary))
+
+    def _model(r, v_max, r_t):
+        return v_bary + v_max * np.tanh(r / r_t)
+
+    try:
+        popt, pcov = curve_fit(
+            _model,
+            radius,
+            v_obs,
+            p0=[80.0, 5.0],
+            sigma=v_err_safe,
+            absolute_sigma=True,
+            bounds=(
+                [vmax_bounds[0], rt_bounds[0]],
+                [vmax_bounds[1], rt_bounds[1]],
+            ),
+        )
+        vmax_best = float(popt[0])
+        rt_best = float(popt[1])
+        perr = np.sqrt(np.diag(pcov))
+        vmax_err = float(perr[0])
+        rt_err = float(perr[1])
+        converged = True
+    except RuntimeError as e:
+        logger.warning("%s: tanh taper fit did not converge — %s", galaxy_id, e)
+        vmax_best = rt_best = vmax_err = rt_err = float("nan")
+        converged = False
+
+    v_model = _model(radius, vmax_best, rt_best)
+    residuals = v_obs - v_model
+    chi2 = float(np.sum((residuals / v_err_safe) ** 2))
+    dof = max(n_points - 2, 1)  # 2 free parameters
+    reduced_chi2 = chi2 / dof
+    rmse = float(np.sqrt(np.mean(residuals**2)))
+
+    # For tanh model, the effective omega at R=0 is V_max / R_t
+    omega_effective = vmax_best / rt_best if rt_best > 0 else float("nan")
+
+    result = TaperedFitResult(
+        galaxy_id=galaxy_id,
+        model_name="tanh_taper",
+        omega_value=omega_effective,
+        omega_uncertainty=float("nan"),  # derived quantity, no simple error
+        rt_value=rt_best,
+        rt_uncertainty=rt_err,
+        chi_squared=chi2,
+        reduced_chi_squared=reduced_chi2,
+        residuals_rmse=rmse,
+        n_points=n_points,
+        n_params=2,
+        converged=converged,
+        flag_v_obs_lt_v_bary=flag_v_obs_lt_v_bary,
+        method_version=method_version,
+        upsilon_disk=upsilon_disk,
+        upsilon_bulge=upsilon_bulge,
+        v_bary=v_bary,
+        v_model=v_model,
+        residuals=residuals,
+        vmax_value=vmax_best,
+        vmax_uncertainty=vmax_err,
+    )
+
+    if converged:
+        logger.info(
+            "%s [tanh taper]: V_max=%.4f +/- %.4f  R_t=%.4f +/- %.4f  chi2_r=%.2f  RMSE=%.2f",
+            galaxy_id, vmax_best, vmax_err, rt_best, rt_err, reduced_chi2, rmse,
+        )
+
+    return result
+
+
+def fit_omega_tapered_kRd(
+    radius: np.ndarray,
+    v_obs: np.ndarray,
+    v_err: np.ndarray,
+    v_bary: np.ndarray,
+    r_d: float,
+    galaxy_id: str = "unknown",
+    method_version: str = "v2_kRd_taper",
+    upsilon_disk: float = 0.5,
+    upsilon_bulge: float = 0.7,
+    omega_bounds: tuple = (0.0, 200.0),
+    k_bounds: tuple = (0.1, 20.0),
+) -> "TaperedFitResult":
+    """Fit the rational-taper model with R_t = k * R_d (universal coupling).
+
+    Model: V_model = V_bary + omega * R / (1 + R / (k * R_d))
+
+    Instead of fitting R_t directly, this parameterizes the transition
+    radius as a multiple of the disk scale length R_d. If k is universal
+    across galaxies, this implies the "dark" transition scale is set by
+    the baryonic disk.
+
+    Args:
+        radius: Radial positions (kpc).
+        v_obs: Observed velocities (km/s).
+        v_err: Velocity errors (km/s). Values <= 0 are replaced.
+        v_bary: Pre-computed baryonic velocity (km/s).
+        r_d: Disk scale length (kpc), fixed from photometry.
+        galaxy_id: Galaxy identifier for labeling.
+        method_version: Version string for reproducibility.
+        upsilon_disk: Mass-to-light ratio used for V_bary.
+        upsilon_bulge: Mass-to-light ratio used for V_bary.
+        omega_bounds: (lower, upper) bounds for omega in km/s/kpc.
+        k_bounds: (lower, upper) bounds for k (dimensionless).
+
+    Returns:
+        TaperedFitResult with rt_value = k * R_d and k stored in metadata.
+    """
+    radius = np.asarray(radius, dtype=np.float64)
+    v_obs = np.asarray(v_obs, dtype=np.float64)
+    v_err = np.asarray(v_err, dtype=np.float64)
+    v_bary = np.asarray(v_bary, dtype=np.float64)
+
+    n_points = len(radius)
+
+    positive_errs = v_err[v_err > 0]
+    min_err = float(np.min(positive_errs)) if len(positive_errs) > 0 else 1.0
+    v_err_safe = np.where(v_err > 0, v_err, min_err)
+
+    flag_v_obs_lt_v_bary = bool(np.any(v_obs < v_bary))
+
+    def _model(r, omega, k):
+        r_t = k * r_d
+        return v_bary + omega * r / (1.0 + r / r_t)
+
+    try:
+        popt, pcov = curve_fit(
+            _model,
+            radius,
+            v_obs,
+            p0=[5.0, 2.0],
+            sigma=v_err_safe,
+            absolute_sigma=True,
+            bounds=(
+                [omega_bounds[0], k_bounds[0]],
+                [omega_bounds[1], k_bounds[1]],
+            ),
+        )
+        omega_best = float(popt[0])
+        k_best = float(popt[1])
+        perr = np.sqrt(np.diag(pcov))
+        omega_err = float(perr[0])
+        k_err = float(perr[1])
+        converged = True
+    except RuntimeError as e:
+        logger.warning("%s: k*R_d taper fit did not converge — %s", galaxy_id, e)
+        omega_best = k_best = omega_err = k_err = float("nan")
+        converged = False
+
+    rt_best = k_best * r_d
+    rt_err = k_err * r_d  # linear error propagation (R_d is fixed)
+
+    v_model = _model(radius, omega_best, k_best)
+    residuals = v_obs - v_model
+    chi2 = float(np.sum((residuals / v_err_safe) ** 2))
+    dof = max(n_points - 2, 1)  # 2 free parameters
+    reduced_chi2 = chi2 / dof
+    rmse = float(np.sqrt(np.mean(residuals**2)))
+
+    result = TaperedFitResult(
+        galaxy_id=galaxy_id,
+        model_name="kRd_taper",
+        omega_value=omega_best,
+        omega_uncertainty=omega_err,
+        rt_value=rt_best,
+        rt_uncertainty=rt_err,
+        chi_squared=chi2,
+        reduced_chi_squared=reduced_chi2,
+        residuals_rmse=rmse,
+        n_points=n_points,
+        n_params=2,
+        converged=converged,
+        flag_v_obs_lt_v_bary=flag_v_obs_lt_v_bary,
+        method_version=method_version,
+        upsilon_disk=upsilon_disk,
+        upsilon_bulge=upsilon_bulge,
+        v_bary=v_bary,
+        v_model=v_model,
+        residuals=residuals,
+        k_value=k_best,
+        k_uncertainty=k_err,
+        r_d_value=r_d,
+    )
+
+    if converged:
+        logger.info(
+            "%s [k*R_d taper]: omega=%.4f +/- %.4f  k=%.4f +/- %.4f  R_t=%.4f  chi2_r=%.2f  RMSE=%.2f",
+            galaxy_id, omega_best, omega_err, k_best, k_err, rt_best, reduced_chi2, rmse,
+        )
+
+    return result
+
+
+@dataclass
+class TaperedFitResult:
+    """Container for results from a tapered omega fit (2-parameter models)."""
+
+    galaxy_id: str
+    model_name: str
+    omega_value: float
+    omega_uncertainty: float
+    rt_value: float
+    rt_uncertainty: float
+    chi_squared: float
+    reduced_chi_squared: float
+    residuals_rmse: float
+    n_points: int
+    n_params: int
+    converged: bool
+    flag_v_obs_lt_v_bary: bool
+    method_version: str
+    upsilon_disk: float
+    upsilon_bulge: float
+    v_bary: np.ndarray = field(repr=False)
+    v_model: np.ndarray = field(repr=False)
+    residuals: np.ndarray = field(repr=False)
+    # tanh model stores V_max separately
+    vmax_value: Optional[float] = None
+    vmax_uncertainty: Optional[float] = None
+    # k*R_d model stores coupling constant and disk scale length
+    k_value: Optional[float] = None
+    k_uncertainty: Optional[float] = None
+    r_d_value: Optional[float] = None
+
+    def to_dict(self) -> dict:
+        """Convert to dict suitable for database insertion (excludes arrays)."""
+        d = {
+            "galaxy_id": self.galaxy_id,
+            "model_name": self.model_name,
+            "omega_value": self.omega_value,
+            "omega_uncertainty": self.omega_uncertainty,
+            "rt_value": self.rt_value,
+            "rt_uncertainty": self.rt_uncertainty,
+            "chi_squared": self.chi_squared,
+            "reduced_chi_squared": self.reduced_chi_squared,
+            "residuals_rmse": self.residuals_rmse,
+            "n_points": self.n_points,
+            "n_params": self.n_params,
+            "converged": self.converged,
+            "flag_v_obs_lt_v_bary": self.flag_v_obs_lt_v_bary,
+            "method_version": self.method_version,
+            "upsilon_disk": self.upsilon_disk,
+            "upsilon_bulge": self.upsilon_bulge,
+        }
+        if self.vmax_value is not None:
+            d["vmax_value"] = self.vmax_value
+            d["vmax_uncertainty"] = self.vmax_uncertainty
+        if self.k_value is not None:
+            d["k_value"] = self.k_value
+            d["k_uncertainty"] = self.k_uncertainty
+            d["r_d_value"] = self.r_d_value
+        return d
+
+
+def compute_bic(n_points: int, k_params: int, chi_squared: float) -> float:
+    """Compute the Bayesian Information Criterion (BIC).
+
+    BIC = chi^2 + k * ln(n)
+
+    where chi^2 is the total (non-reduced) chi-squared, k is the number
+    of free parameters, and n is the number of data points.
+
+    Lower BIC indicates a preferred model. The difference Delta_BIC
+    between two models follows the Kass & Raftery (1995) scale:
+      - |Delta_BIC| < 2:   Not worth mentioning
+      - 2 < |Delta_BIC| < 6:  Positive evidence
+      - 6 < |Delta_BIC| < 10: Strong evidence
+      - |Delta_BIC| > 10:     Very strong evidence
+
+    Args:
+        n_points: Number of data points.
+        k_params: Number of free parameters in the model.
+        chi_squared: Total (non-reduced) chi-squared value.
+
+    Returns:
+        BIC value.
+    """
+    return chi_squared + k_params * np.log(n_points)
+
+
 def compute_validation_metrics(
     radius: np.ndarray,
     v_bary: np.ndarray,
