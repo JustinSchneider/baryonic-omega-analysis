@@ -2,7 +2,7 @@
 
 **Authors:** Justin Schneider, David C. Flynn, Jim Cannaliato
 **Last Updated:** February 2026
-**Phase:** I — Infrastructure & Calibration (complete through batch analysis)
+**Phase:** Phase I & II complete — Infrastructure, Calibration, Batch Analysis, and Robustness
 
 ---
 
@@ -67,8 +67,8 @@ For HI gas, a helium correction factor of 1.33 is applied: $\Sigma_{gas} = 1.33 
 | Disk M/L | $\Upsilon_{disk}$ | 0.5 | 0.3 – 0.8 | SPARC default (3.6 $\mu$m band) |
 | Bulge M/L | $\Upsilon_{bulge}$ | 0.7 | 0.3 – 0.8 | SPARC default |
 
-**Phase I (current):** $\Upsilon$ values are held constant at SPARC defaults.
-**Future work:** $\Upsilon$ may be treated as free parameters in the fit (bounded 0.3–0.8).
+**Phase I & II (current):** $\Upsilon$ values are held constant at SPARC defaults. Sensitivity analysis (Notebook 05) quantifies the impact of this assumption across galaxy types (see Section 7).
+**Future work (Phase III):** $\Upsilon$ may be treated as a free parameter in the fit (bounded 0.3–0.8).
 
 ---
 
@@ -205,7 +205,8 @@ If $k$ is approximately constant across galaxies, this implies the saturation sc
 ### 5.2 Fit Convergence
 
 - **Target:** `scipy.curve_fit` converges for >90% of SPARC galaxies
-- **Phase I result:** 118/118 galaxies achieved numerical convergence (100%); 89/118 (75%) met the $\chi^2_{red} < 5$ quality threshold
+- **Phase I result:** 118/118 galaxies achieved numerical convergence (100%); 89/118 (75%) met the $\chi^2_\nu < 5$ quality threshold
+- **Phase II result:** 19/19 boundary-solution galaxies re-converged with constrained $R_t$; 7/7 gallery galaxies converged for both linear and tapered models
 - **Edge cases:** Galaxies with $V_{obs} < V_{bary}$ anywhere are flagged in the database
 
 ### 5.3 Database Integrity
@@ -236,17 +237,24 @@ Export tables (CSV) + Generate figures (PNG)
 
 Each fit stores a `method_version` string so results from different fitting algorithms can be compared. Current versions:
 
-| Version | Description |
-|---------|-------------|
-| `v1_fixed_ML` | Linear model, fixed $\Upsilon$ at SPARC defaults |
-| `v1_quadrature` | Quadrature model, fixed $\Upsilon$ |
-| `v1_rational_taper` | Rational taper, free $\omega$ and $R_t$ |
-| `v1_tanh_taper` | Tanh taper, free $V_{max}$ and $R_t$ |
-| `v2_kRd_taper` | Rational taper with $R_t = k \cdot R_d$, free $\omega$ and $k$ |
+| Version | Description | Phase |
+|---------|-------------|-------|
+| `v1_fixed_ML` | Linear model, fixed $\Upsilon$ at SPARC defaults | I |
+| `v1_quadrature` | Quadrature model, fixed $\Upsilon$ | I |
+| `v1_rational_taper` | Rational taper, free $\omega$ and $R_t$ | I |
+| `v1_tanh_taper` | Tanh taper, free $V_{max}$ and $R_t$ | I |
+| `v2_kRd_taper` | Rational taper with $R_t = k \cdot R_d$, free $\omega$ and $k$ | I |
+| `v2_sensitivity_Yd*` | Sensitivity sweep varying $\Upsilon_d$ | II |
+| `v2_linear_reanalysis` | M33 linear re-analysis for comparison | II |
+| `v2_tapered_reanalysis` | M33 tapered re-analysis for comparison | II |
+| `v3_gallery_linear` | Gallery linear fits (Notebook 06) | II |
+| `v3_gallery_tapered` | Gallery robust tapered fits (multiple initial guesses) | II |
 
 ---
 
 ## 7. Sensitivity Analysis
+
+### 7.1 M33 Calibration Sweep (Notebook 01)
 
 For the M33 calibration, we test the sensitivity of $\omega$ to the disk mass-to-light ratio:
 
@@ -254,7 +262,42 @@ For the M33 calibration, we test the sensitivity of $\omega$ to the disk mass-to
 - $\Upsilon_{bulge}$ held fixed at 0.7 (M33 has negligible bulge)
 - Results stored in `results/tables/M33_sensitivity.csv`
 
-This establishes how strongly the omega measurement depends on the assumed stellar mass normalization.
+### 7.2 Cross-Galaxy Robustness Test (Notebook 05)
+
+Three representative galaxies tested at $\Upsilon_d \in \{0.3, 0.5, 0.8\}$ to assess whether the omega model is an artifact of the baryonic decomposition:
+
+- **DDO 161** (LSB, gas-dominated): $\omega$ varies by 28% — model is robust
+- **NGC 0300** (intermediate Sc): $\omega$ varies by 94%
+- **NGC 2841** (HSB, disk-dominated): $\omega$ varies by 134% — model is sensitive
+
+**Implementation:** Notebook 05, Work Package C
+**Results:** `results/tables/upsilon_sensitivity.csv`
+
+**Conclusion:** The model is most reliable for gas-dominated (LSB) systems where $V_{gas} \gg V_{disk}$ and the baryonic velocity is insensitive to stellar mass assumptions. For HSB galaxies, constraining $\Upsilon_d$ is critical for interpreting $\omega$ values.
+
+### 7.3 Population Analysis (Notebook 05)
+
+The batch results from Notebook 04 reveal a bimodal $k$ distribution. We classify galaxies into:
+
+- **Interior solutions** ($k < 20$, N=99): Taper well-constrained. Predominantly LSB.
+- **Boundary solutions** ($k = 20$, N=19): Optimizer hits upper bound. Predominantly HSB.
+
+Mann-Whitney U tests confirm statistically significant differences ($p < 0.001$) in luminosity, surface brightness, and flat velocity between the two populations.
+
+**Density-dependent coupling test:** $k$ vs. $\Sigma_0$ regression yields $R^2 = 0.009$, $p = 0.34$ — no significant correlation. The coupling constant is independent of surface brightness within the well-fit population.
+
+**Implementation:** Notebook 05, Work Packages A & B
+**Results:** `results/tables/SPARC_unified_coupling_results.csv`
+
+### 7.4 Model Gallery Validation (Notebook 06)
+
+Head-to-head comparison of the Linear and Tapered models across 7 galaxies spanning the full $\Sigma_0$ range, using a surface brightness predictor to classify galaxies before fitting.
+
+- **Prediction accuracy:** 4/5 testable cases (80%)
+- **Notable failure:** NGC 2841 (HSB) was predicted to prefer Linear but BIC strongly favors Tapered, suggesting the tapered model may be more broadly applicable than the population split implies.
+
+**Implementation:** Notebook 06 (with robust tapered fitter using multiple initial guesses)
+**Results:** `results/tables/model_gallery_validation.csv`
 
 ---
 

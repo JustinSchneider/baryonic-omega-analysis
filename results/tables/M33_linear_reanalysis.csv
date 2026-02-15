@@ -1,0 +1,3 @@
+Model,Omega_km_s_kpc,Omega_err,R_t_kpc,RMSE_km_s,Chi2_red,BIC,n_points,converged
+Linear (k=inf),6.974863,0.041827,inf,31.053169,72.907215,4159.771675,58,True
+Rational Taper,42.974740,1.635138,1.978158,9.486078,4.573312,264.226376,58,True
