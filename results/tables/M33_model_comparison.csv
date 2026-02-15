@@ -1,0 +1,3 @@
+model,equation,omega_km_s_kpc,omega_err,chi2_total,chi2_reduced,rmse_km_s,bic,rmse_outer_R_gt_10,n_points,upsilon_disk,upsilon_bulge
+Linear (A),V_bary + omega*R,6.974862,0.041827,4155.712255,72.907233,31.053168,4159.772698,36.897487,58,0.500000,0.700000
+Quadrature (B),sqrt(V_bary^2 + (omega*R)^2),9.843322,0.046093,8714.292777,152.882329,45.258689,8718.353220,55.522298,58,0.500000,0.700000

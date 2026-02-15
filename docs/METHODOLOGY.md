@@ -2,7 +2,7 @@
 
 **Authors:** Justin Schneider, David C. Flynn, Jim Cannaliato
 **Last Updated:** February 2026
-**Phase:** I — Infrastructure & Calibration
+**Phase:** I — Infrastructure & Calibration (complete through batch analysis)
 
 ---
 
@@ -58,7 +58,7 @@ For M33, surface densities ($\Sigma$ in $M_\odot/\text{pc}^2$) are converted to 
 
 For HI gas, a helium correction factor of 1.33 is applied: $\Sigma_{gas} = 1.33 \times \Sigma_{HI}$.
 
-**Implementation:** `src/physics.py :: surface_density_to_v_circ()`
+**Implementation:** `src/physics.py :: circular_velocity_thin_disk()`
 
 ### 3.3 Mass-to-Light Ratio Conventions
 
@@ -74,17 +74,33 @@ For HI gas, a helium correction factor of 1.33 is applied: $\Sigma_{gas} = 1.33 
 
 ## 4. Omega Fitting Method
 
-### 4.1 Model
+### 4.1 Models
+
+Two competing functional forms are tested (Notebook 02):
+
+**Model A — Linear (Flynn & Cannaliato 2025):**
 
 $$V_{model}(R) = V_{bary}(R) + \omega \cdot R$$
 
-The parameter $\omega$ (units: km/s/kpc) represents a linear velocity correction that scales with galactocentric radius. Physically, this may correspond to a correction to Newtonian dynamics or a coupling to a background field (Flynn & Cannaliato 2025).
+This treats $\omega$ as a kinematic velocity boost — velocities add directly, analogous to frame-dragging or Coriolis-type effects.
+
+**Model B — Quadrature (Standard force addition):**
+
+$$V_{model}(R) = \sqrt{V_{bary}^2(R) + (\omega \cdot R)^2}$$
+
+This treats $\omega$ as a dynamical force contribution whose potential adds in quadrature with the baryonic potential, analogous to how dark matter halo models combine with baryonic components (Lelli et al. 2016). The force balance is:
+
+$$\frac{V^2}{R} = F_{grav} + F_\omega \implies V^2 = V_{bary}^2 + (\omega R)^2$$
+
+Both models have a single free parameter ($\omega$, in km/s/kpc). Model selection uses BIC (Section 4.4).
+
+**Implementation:** `src/physics.py :: fit_omega()` (linear), `fit_omega_quadrature()` (quadrature)
 
 ### 4.2 Fitting Procedure
 
 **Objective:** Minimize weighted chi-squared:
 
-$$\chi^2 = \sum_i \left[ \frac{V_{obs,i} - V_{bary,i} - \omega \cdot R_i}{\sigma_{V,i}} \right]^2$$
+$$\chi^2 = \sum_i \left[ \frac{V_{obs,i} - V_{model,i}}{\sigma_{V,i}} \right]^2$$
 
 **Implementation details:**
 
@@ -106,22 +122,90 @@ For each fit, we compute and store:
 | Converged | Whether `curve_fit` converged successfully |
 | Flag: $V_{obs} < V_{bary}$ | True if observed velocity falls below baryonic at any radius |
 
-**Implementation:** `src/physics.py :: fit_omega()` → `OmegaFitResult` dataclass
+**Implementation:** `src/physics.py :: fit_omega()`, `fit_omega_quadrature()` → `OmegaFitResult` dataclass
+
+### 4.4 Model Selection: BIC
+
+Both models have $k = 1$ free parameter. We use the Bayesian Information Criterion (Schwarz 1978) for model comparison:
+
+$$\text{BIC} = \chi^2 + k \ln(n)$$
+
+where $n$ is the number of data points. Lower BIC is preferred. The difference $\Delta\text{BIC} = \text{BIC}_A - \text{BIC}_B$ follows the Kass & Raftery (1995) interpretation:
+
+| $|\Delta\text{BIC}|$ | Evidence |
+|---|---|
+| < 2 | Not worth mentioning |
+| 2–6 | Positive |
+| 6–10 | Strong |
+| > 10 | Very strong |
+
+We also compute RMSE restricted to the outer disk ($R > 10$ kpc) where the two models diverge most, as a secondary discriminant.
+
+**Implementation:** `src/physics.py :: compute_bic()`
+**Results:** `results/tables/M33_model_comparison.csv`
+
+### 4.5 Tapered Models (Notebook 03)
+
+The pure linear model ($\omega R$) grows without bound, conflicting with observed flat rotation curves. We test two saturation forms:
+
+**Model C — Rational Taper:**
+
+$$V_{model}(R) = V_{bary}(R) + \frac{\omega \cdot R}{1 + R/R_t}$$
+
+At small $R$ this reduces to $\omega R$ (linear); at large $R$ it saturates to $\omega R_t$ (constant). Two free parameters: $\omega$ (km/s/kpc) and $R_t$ (kpc).
+
+**Model D — Tanh Taper:**
+
+$$V_{model}(R) = V_{bary}(R) + V_{max} \cdot \tanh(R / R_t)$$
+
+Two free parameters: $V_{max}$ (km/s) and $R_t$ (kpc). The effective inner-disk $\omega = V_{max} / R_t$.
+
+**Fitting details:**
+- **Optimizer:** `scipy.optimize.curve_fit` with `absolute_sigma=True`
+- **Initial guesses:** $\omega_0 = 5$, $R_{t,0} = 5$ (rational); $V_{max,0} = 80$, $R_{t,0} = 5$ (tanh)
+- **Bounds:** $\omega \in [0, 50]$, $R_t \in [0.1, 50]$ (rational); $V_{max} \in [0, 500]$, $R_t \in [0.1, 50]$ (tanh)
+- **Degrees of freedom:** $\text{dof} = n - 2$ (two free parameters)
+
+**Implementation:** `src/physics.py :: fit_omega_tapered()` (rational), `fit_omega_tanh()` (tanh)
+**Results:** `results/tables/M33_tapered_results.csv`
+
+### 4.6 Universal Coupling Parameterization (Notebook 04)
+
+To test whether the transition radius $R_t$ is related to galaxy structure, we reparameterize:
+
+$$R_t = k \cdot R_d$$
+
+where $R_d$ is the disk scale length from the SPARC photometric catalog (fixed per galaxy) and $k$ is a dimensionless coupling constant (fit parameter). The model becomes:
+
+$$V_{model}(R) = V_{bary}(R) + \frac{\omega \cdot R}{1 + R / (k \cdot R_d)}$$
+
+If $k$ is approximately constant across galaxies, this implies the saturation scale is set by the baryonic disk.
+
+**Fitting details:**
+- **Free parameters:** $\omega$ and $k$ (two parameters per galaxy)
+- **Bounds:** $\omega \in [0, 200]$, $k \in [0.1, 20]$
+- **Initial guesses:** $\omega_0 = 5$, $k_0 = 2$
+- **Quality filter:** Fits with $\chi^2_{red} < 5$ are considered well-constrained
+
+**Implementation:** `src/physics.py :: fit_omega_tapered_kRd()`
+**Results:** `results/tables/SPARC_tapered_batch_results.csv`
 
 ---
 
 ## 5. Validation Criteria
 
-### 5.1 M33 Benchmark
+### 5.1 M33 Pipeline Self-Consistency
 
-- **Test:** Compare our $V_{bary}$ against Corbelli's published $V_{stars} + V_{gas}$
-- **Success criterion:** Agreement within 5% at all radii $R > 2$ kpc
+- **Test:** Round-trip check — compare $V_{bary}$ recomputed during analysis against $V_{bary}$ computed during database ingestion, both from the same Corbelli (2014) surface density inputs
+- **Success criterion:** 0% deviation (deterministic pipeline)
+- **Note:** This verifies internal consistency (no bugs, rounding errors, or parameter mismatches between pipeline stages). It does **not** constitute an independent comparison against Corbelli's published velocity decomposition, which would require their original $V_{gas}$ and $V_{stars}$ values (not available in their Table 1). An independent cross-check against Corbelli's Fig. 7 mass models remains a future validation step.
 - **Implementation:** `src/physics.py :: compute_validation_metrics()`
 - **Output:** `results/tables/M33_validation.csv`
 
-### 5.2 Fit Convergence (Phase II)
+### 5.2 Fit Convergence
 
 - **Target:** `scipy.curve_fit` converges for >90% of SPARC galaxies
+- **Phase I result:** 118/118 galaxies achieved numerical convergence (100%); 89/118 (75%) met the $\chi^2_{red} < 5$ quality threshold
 - **Edge cases:** Galaxies with $V_{obs} < V_{bary}$ anywhere are flagged in the database
 
 ### 5.3 Database Integrity
@@ -150,7 +234,15 @@ Export tables (CSV) + Generate figures (PNG)
 
 ### Versioning
 
-Each fit stores a `method_version` string (e.g., `v1_fixed_ML`) so results from different fitting algorithms can be compared. Current version: `v1_fixed_ML` (fixed mass-to-light ratios).
+Each fit stores a `method_version` string so results from different fitting algorithms can be compared. Current versions:
+
+| Version | Description |
+|---------|-------------|
+| `v1_fixed_ML` | Linear model, fixed $\Upsilon$ at SPARC defaults |
+| `v1_quadrature` | Quadrature model, fixed $\Upsilon$ |
+| `v1_rational_taper` | Rational taper, free $\omega$ and $R_t$ |
+| `v1_tanh_taper` | Tanh taper, free $V_{max}$ and $R_t$ |
+| `v2_kRd_taper` | Rational taper with $R_t = k \cdot R_d$, free $\omega$ and $k$ |
 
 ---
 
@@ -173,4 +265,6 @@ This establishes how strongly the omega measurement depends on the assumed stell
 3. Corbelli, E. & Salucci, P. (2000). MNRAS, 311, 441. "The Extended Rotation Curve and the Dark Matter Halo of M33."
 4. Corbelli, E., et al. (2014). A&A, 572, A23. "Dynamical signatures of a $\Lambda$CDM-halo and the distribution of the baryons in M33."
 5. Flynn, D. C. & Cannaliato, J. (2025). "A New Empirical Fit to Galaxy Rotation Curves."
-6. Lelli, F., McGaugh, S. S., & Schombert, J. M. (2016). AJ, 152, 157. "SPARC: Mass Models for 175 Disk Galaxies with Spitzer Photometry and Accurate Rotation Curves."
+6. Kass, R. E. & Raftery, A. E. (1995). JASA, 90, 773. "Bayes Factors."
+7. Lelli, F., McGaugh, S. S., & Schombert, J. M. (2016). AJ, 152, 157. "SPARC: Mass Models for 175 Disk Galaxies with Spitzer Photometry and Accurate Rotation Curves."
+8. Schwarz, G. (1978). Annals of Statistics, 6, 461. "Estimating the Dimension of a Model."

@@ -1,0 +1,4 @@
+model,equation,n_params,omega_km_s_kpc,R_t_kpc,R_t_err_kpc,V_max_km_s,R_t_over_R_d,chi2_total,chi2_reduced,rmse_km_s,bic,rmse_outer_R_gt_10,n_points,upsilon_disk,upsilon_bulge
+A (Linear),V_bary + omega*R,1,6.974862,,,,,4155.712255,72.907233,31.053168,4159.772698,36.897487,58,0.500000,0.700000
+B (Rational Taper),V_bary + omega*R/(1+R/R_t),2,42.974762,1.978157,0.096589,85.010819,1.412969,256.105763,4.573317,9.486082,264.226649,10.541124,58,0.500000,0.700000
+C (Tanh Taper),V_bary + V_max*tanh(R/R_t),2,22.685216,3.086722,0.079333,70.022957,2.204801,543.014850,9.696694,13.450696,551.135736,15.971430,58,0.500000,0.700000

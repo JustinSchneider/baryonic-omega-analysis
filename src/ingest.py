@@ -309,10 +309,19 @@ def parse_sparc_metadata_mrt(filepath: str | Path) -> pd.DataFrame:
                 "galaxy_id": fields[0],
                 "hubble_type": int(fields[1]),
                 "distance_mpc": float(fields[2]),
+                "e_distance_mpc": float(fields[3]),
                 "inclination": float(fields[5]),
+                "e_inclination": float(fields[6]),
                 "luminosity_band_36": float(fields[7]),  # 10^9 Lsun
-                "quality_flag": int(fields[17]),
+                "r_eff_kpc": float(fields[9]),
+                "sb_eff": float(fields[10]),
+                "r_disk_kpc": float(fields[11]),
+                "sb_disk": float(fields[12]),
+                "m_hi": float(fields[13]),  # 10^9 Msun
+                "r_hi_kpc": float(fields[14]),
                 "v_flat": float(fields[15]),
+                "e_v_flat": float(fields[16]),
+                "quality_flag": int(fields[17]),
             })
         except (ValueError, IndexError) as e:
             logger.warning("Skipping metadata line: %s", e)
