@@ -73,9 +73,40 @@ Head-to-head comparison of the Flynn & Cannaliato (2025) linear model vs. the Sc
 
 The surface brightness predictor achieves **80% accuracy** (4/5 testable cases). The NGC 2841 failure suggests the HSB threshold needs refinement or that the tapered model is more broadly applicable than the population split implies.
 
+### 7. Full-Catalog BIC Analysis (Phase III — 175 Galaxies)
+
+Applying both models to the complete SPARC catalog confirms the Tapered model's superiority at scale. 171 of 175 galaxies converge cleanly (97.7% success rate).
+
+| Model Preference | Count | Fraction |
+|---|---|---|
+| Tapered | 127 | 74.3% |
+| Linear | 27 | 15.8% |
+| Indistinguishable | 17 | 9.9% |
+
+Median $\Delta\text{BIC} = +49.9$ ("very strong" evidence on the Kass & Raftery scale). The strongest individual wins are UGC02953 ($\Delta$BIC = 19024, RMSE 41.7 → 21.9 km/s) and NGC2403 ($\Delta$BIC = 16435, RMSE 18.6 → 5.4 km/s).
+
+![BIC Histogram](results/figures/phase_iii_bic_histogram.png)
+
+### 8. $R_t$–$R_d$ Scaling (Full Catalog)
+
+The $R_t \propto R_d$ correlation holds across the full 171-galaxy sample:
+
+$$\log_{10}(R_t) = 0.794 \cdot \log_{10}(R_d) + 0.448 \quad (R^2 = 0.135,\; p = 7.8 \times 10^{-7},\; N = 171)$$
+
+Median coupling constant: **$k = R_t / R_d = 2.42$** (IQR: 0.85–8.60). The statistical significance of the $R_t$–$R_d$ correlation across an independent 171-galaxy sample confirms that the taper scale is physically set by the baryonic disk, not a fitting artifact.
+
+![Rt vs Rd](results/figures/phase_iii_Rt_vs_Rd.png)
+
+### 9. Surface Brightness Regime (Full Catalog)
+
+A Mann-Whitney test finds no statistically significant difference in $\Delta$BIC between LSB and HSB regimes ($p = 0.171$). The Tapered model is broadly preferred across all surface brightness classes (LSB: 75%, Transition: 70%, HSB: 75%), superseding the Phase II prediction of a strong LSB/HSB dichotomy. The model is more universal than initially expected.
+
+![Sigma0 Regime](results/figures/phase_iii_sigma0_regime.png)
+
 ## Documentation
 
-- [**RESULTS.md**](docs/RESULTS.md) — Full Phase I & II results with figures and analysis
+- [**PHASE_III_RESULTS.md**](docs/PHASE_III_RESULTS.md) — Full Phase III results: full-catalog BIC analysis, $R_t$–$R_d$ scaling, and complete rotation-curve gallery (171 galaxies)
+- [**PHASE_II_RESULTS.md**](docs/PHASE_II_RESULTS.md) — Full Phase I & II results with figures and analysis
 - [**METHODOLOGY.md**](docs/METHODOLOGY.md) — Detailed methods, equations, and fitting procedures
 - [**CLAUDE.md**](CLAUDE.md) — Project plan, phases, and developer guidelines
 
@@ -108,6 +139,8 @@ python src/fit.py --galaxy M33 --plot
 | 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization   |
 | 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity |
 | 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types        |
+| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies |
+| 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC) |
 
 ## Project Structure
 

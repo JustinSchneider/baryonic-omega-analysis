@@ -126,7 +126,6 @@ def circular_velocity_thin_disk(
 
     return v_circ
 
-
 @dataclass
 class OmegaFitResult:
     """Container for all results from an omega fit."""
@@ -209,7 +208,7 @@ class OmegaFitResult:
         })
 
 
-def compute_v_bary(
+def compute_v_bary_flynn(
     v_gas: np.ndarray,
     v_disk: np.ndarray,
     v_bulge: np.ndarray,
@@ -257,6 +256,56 @@ def compute_v_bary(
         v2_total = np.where(negative_mask, 0.0, v2_total)
 
     return np.sqrt(v2_total)
+
+
+# ---------------------------------------------------------------------------
+# Hidden gas mass scaling (Corbelli 2000)
+# ---------------------------------------------------------------------------
+
+def compute_v_bary(
+    v_gas: np.ndarray,
+    v_disk: np.ndarray,
+    v_bulge: np.ndarray,
+    upsilon_disk: float,   # Renamed from upsilon_d to match notebook/ingest
+    upsilon_bulge: float,  # Renamed from upsilon_b
+    gas_scale: float = 1.0
+) -> np.ndarray:
+    """
+    Computes total baryonic velocity with gas scaling.
+    Handles negative (imaginary) velocities correctly via Lelli et al. convention.
+    """
+    v_gas = np.asarray(v_gas, dtype=np.float64)
+    v_disk = np.asarray(v_disk, dtype=np.float64)
+    v_bulge = np.asarray(v_bulge, dtype=np.float64)
+
+    # Use abs(V)*V to preserve sign of potential (Lelli et al. 2016 Eq 2)
+    # This ensures "holes" in the gas distribution don't become massive spikes
+    v2_gas = gas_scale * np.abs(v_gas) * v_gas
+    v2_disk = upsilon_disk * np.abs(v_disk) * v_disk
+    v2_bulge = upsilon_bulge * np.abs(v_bulge) * v_bulge
+
+    v2_total = v2_gas + v2_disk + v2_bulge
+
+    # Clamp to 0 to avoid sqrt of negative numbers (unphysical regions)
+    return np.sqrt(np.maximum(0, v2_total))
+
+# Update your fitting function to optimize gas_scale
+def fit_omega_with_gas_scaling(radius, v_obs, v_err, v_gas, v_disk, v_bulge):
+    
+    def model(r, omega, rt, upsilon_d, gas_scale):
+        # 1. Compute adjusted baryonic velocity
+        v_bary = compute_v_bary(v_gas, v_disk, v_bulge, upsilon_d, 0.7, gas_scale)
+        
+        # 2. Apply your Tapered Model
+        # V = V_bary + (omega * R) / (1 + R/Rt)
+        return v_bary + (omega * r) / (1 + (r / rt))
+
+    # Fit parameters: omega, Rt, Upsilon_disk, Gas_Scale
+    # Bounds: Gas scale typically 1.0 to 3.0 (extreme)
+    popt, pcov = curve_fit(model, radius, v_obs, sigma=v_err, 
+                           p0=[10, 5, 0.5, 1.0], 
+                           bounds=([0, 0.1, 0.1, 0.5], [100, 50, 2.0, 5.0]))
+    return popt
 
 
 def fit_omega(
