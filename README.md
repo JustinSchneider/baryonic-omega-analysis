@@ -1,169 +1,79 @@
-# Baryonic Omega Analysis
+# Baryonic Coupling in Galaxy Rotation Curves
 
-Upgrading the empirical omega velocity correction model (Flynn & Cannaliato 2025) from point-mass approximations to full baryonic mass decomposition using the Corbelli method.
+[![Status: Under Review](https://img.shields.io/badge/Status-Under_Review-yellow.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+This repository contains the data, fitting pipeline, and full results table for the manuscript:
+**"A Baryonically-Coupled Rational Taper Model for Galaxy Rotation Curves: Evidence from the Full SPARC Catalog"** (Schneider, 2026; _Awaiting submission_).
 
 ## Overview
 
-This project fits the omega parameter to galaxy rotation curves using decomposed baryonic velocity components (gas, disk, bulge) from the SPARC database, rather than relying on Keplerian point-mass approximations.
+This project explores a phenomenological extension to the empirical velocity correction model proposed by Flynn & Cannaliato (2025). By upgrading from point-mass approximations to full baryonic mass decompositions using the SPARC database, we test two kinematic models:
 
-**Core model (Flynn & Cannaliato 2025 — Linear):**
+**1. Linear Model (Flynn & Cannaliato 2025):**
+$$V_{model}(R) = V_{bary}(R) + \omega R$$
 
-$$V_{model}(R) = V_{bary}(R) + \omega \cdot R$$
+**2. Rational Taper Model (Schneider 2026):**
+$$V_{model}(R) = V_{bary}(R) + \frac{\omega R}{1 + R / R_t}$$
 
-**Extended model (Schneider 2026 — Rational Taper):**
+The Tapered model introduces a transition radius $R_t$ where the linear correction saturates. Across 171 quality-controlled SPARC galaxies, we find a statistically significant empirical scaling relation where the saturation scale couples to the baryonic disk: $R_t \approx 2.4 R_d$.
 
-$$V_{model}(R) = V_{bary}(R) + \frac{\omega \cdot R}{1 + R / R_t}$$
+## Reproducing the Manuscript Figures
 
-The taper introduces a transition radius $R_t$ where the linear correction saturates, producing flat rotation at large radii. We find that $R_t \approx k \cdot R_d$, where $R_d$ is the disk scale length and $k \approx 2.8$ is a candidate universal coupling constant.
-
-## Key Results
-
-### 1. Mechanism: Kinematic, Not Dynamic
-
-BIC model comparison on the M33 calibration target strongly favors **linear velocity addition** over **quadrature force addition** ($\Delta\text{BIC} = -4559$). The omega correction acts as a velocity boost — not a dark matter-like potential. This rejects the standard DM halo addition mechanism.
-
-### 2. The Tapered Model
-
-The pure linear model diverges at large radii. The rational taper saturates the correction at a characteristic radius $R_t$, reducing M33 RMSE by **69%** (31.1 → 9.5 km/s) and yielding $\chi^2_\nu = 4.6$ vs. 72.9 for the linear form.
-
-![M33 Linear vs Tapered](results/figures/M33_linear_reanalysis.png)
-
-_M33 — the calibration target. The Flynn-Cannaliato (2025) linear model (red dashed, $\omega = 6.97$) diverges beyond ~8 kpc while the Schneider (2026) tapered model (orange, $\omega = 42.97$, $R_t = 2.0$ kpc) tracks the flat observed rotation curve. RMSE drops from 31.1 to 9.5 km/s ($\Delta$BIC = 3896)._
-
-![NGC 3198 Gallery](results/figures/gallery_NGC3198.png)
-
-_NGC 3198 — an intermediate spiral showing the same pattern across galaxy types. The linear model overshoots at large radii while the tapered model tracks the flat rotation curve with RMSE = 6.4 km/s._
-
-### 3. Universal Coupling Constant
-
-Batch analysis of 118 SPARC galaxies reveals a candidate scaling law: the transition radius $R_t$ is proportional to the disk scale length $R_d$ with a median coupling factor **$k = 2.81$** (full sample) or **$k = 2.55$** among the 89 galaxies with $\chi^2_\nu < 5$.
-
-![Coupling Constant Distribution](results/figures/k_distribution.png)
-
-_Distribution of the coupling constant $k = R_t / R_d$ across 118 SPARC galaxies. The primary peak near $k \approx 2$ and the secondary pile-up at $k = 20$ (the parameter bound) reveal two distinct populations: galaxies where the taper is well-constrained (84%) and those that exhibit extended linear-like rise before tapering (16%)._
-
-### 4. Two Populations: Interior vs. Boundary Solutions
-
-The $k$ distribution is bimodal. Galaxies splitting into two populations:
-
-- **Interior solutions** ($k < 20$, N=99, 84%): The taper is well-constrained. These are predominantly lower-luminosity, lower surface brightness systems.
-- **Boundary solutions** ($k = 20$, N=19, 16%): The optimizer hits the parameter bound — these galaxies prefer the pure linear model. They are systematically brighter, more massive, and have higher surface brightness.
-
-![Population Split](results/figures/split_populations.png)
-
-_Boxplots comparing luminosity, central surface brightness, and flat velocity between the two populations. Boundary-solution galaxies (linear-preferred) are systematically more luminous and denser — a physically meaningful distinction, not random fitting noise._
-
-### 5. Robustness
-
-Mass-to-light ratio sensitivity testing ($\Upsilon_d \in \{0.3, 0.5, 0.8\}$) shows that $\omega$ is most stable for gas-dominated (LSB) systems (28% variation for DDO 161) and most sensitive for disk-dominated (HSB) systems (134% for NGC 2841). The model's strength lies in the LSB regime where baryonic uncertainties are smallest.
-
-### 6. Model Gallery
-
-Head-to-head comparison of the Flynn & Cannaliato (2025) linear model vs. the Schneider (2026) tapered model across diverse galaxy types:
-
-| Galaxy   | $\Sigma_0$ ($L_\odot$/pc$^2$) | Prediction    | Preferred (BIC) | Verdict   |
-| -------- | ----------------------------: | ------------- | --------------- | --------- |
-| DDO 154  |                            62 | Tapered (LSB) | Tapered         | Correct   |
-| DDO 161  |                            59 | Tapered (LSB) | Tapered         | Correct   |
-| NGC 0300 |                           152 | Tapered (LSB) | Tapered         | Correct   |
-| NGC 3198 |                           618 | Transition    | Tapered         | —         |
-| NGC 2841 |                          2260 | Linear (HSB)  | Tapered         | Incorrect |
-| NGC 7331 |                          1583 | Linear (HSB)  | Linear          | Correct   |
-| M33      |                             — | —             | Tapered         | —         |
-
-The surface brightness predictor achieves **80% accuracy** (4/5 testable cases). The NGC 2841 failure suggests the HSB threshold needs refinement or that the tapered model is more broadly applicable than the population split implies.
-
-### 7. Full-Catalog BIC Analysis (Phase III — 175 Galaxies)
-
-Applying both models to the complete SPARC catalog confirms the Tapered model's superiority at scale. 171 of 175 galaxies converge cleanly (97.7% success rate).
-
-| Model Preference | Count | Fraction |
-|---|---|---|
-| Tapered | 127 | 74.3% |
-| Linear | 27 | 15.8% |
-| Indistinguishable | 17 | 9.9% |
-
-Median $\Delta\text{BIC} = +49.9$ ("very strong" evidence on the Kass & Raftery scale). The strongest individual wins are UGC02953 ($\Delta$BIC = 19024, RMSE 41.7 → 21.9 km/s) and NGC2403 ($\Delta$BIC = 16435, RMSE 18.6 → 5.4 km/s).
-
-![BIC Histogram](results/figures/phase_iii_bic_histogram.png)
-
-### 8. $R_t$–$R_d$ Scaling (Full Catalog)
-
-The $R_t \propto R_d$ correlation holds across the full 171-galaxy sample:
-
-$$\log_{10}(R_t) = 0.794 \cdot \log_{10}(R_d) + 0.448 \quad (R^2 = 0.135,\; p = 7.8 \times 10^{-7},\; N = 171)$$
-
-Median coupling constant: **$k = R_t / R_d = 2.42$** (IQR: 0.85–8.60). The statistical significance of the $R_t$–$R_d$ correlation across an independent 171-galaxy sample confirms that the taper scale is physically set by the baryonic disk, not a fitting artifact.
-
-![Rt vs Rd](results/figures/phase_iii_Rt_vs_Rd.png)
-
-### 9. Surface Brightness Regime (Full Catalog)
-
-A Mann-Whitney test finds no statistically significant difference in $\Delta$BIC between LSB and HSB regimes ($p = 0.171$). The Tapered model is broadly preferred across all surface brightness classes (LSB: 75%, Transition: 70%, HSB: 75%), superseding the Phase II prediction of a strong LSB/HSB dichotomy. The model is more universal than initially expected.
-
-![Sigma0 Regime](results/figures/phase_iii_sigma0_regime.png)
-
-## Documentation
-
-- [**PHASE_III_RESULTS.md**](docs/PHASE_III_RESULTS.md) — Full Phase III results: full-catalog BIC analysis, $R_t$–$R_d$ scaling, and complete rotation-curve gallery (171 galaxies)
-- [**PHASE_II_RESULTS.md**](docs/PHASE_II_RESULTS.md) — Full Phase I & II results with figures and analysis
-- [**METHODOLOGY.md**](docs/METHODOLOGY.md) — Detailed methods, equations, and fitting procedures
-- [**CLAUDE.md**](CLAUDE.md) — Project plan, phases, and developer guidelines
-
-## Quick Start
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Initialize database
-python src/database.py --init
-
-# Ingest M33 from Corbelli 2014 Table 1
-python src/ingest.py --m33
-
-# Ingest all SPARC galaxies from MRT file
-python src/ingest.py --mrt data/raw/MassModels_Lelli2016c.mrt --metadata data/raw/SPARC_Lelli2016c.mrt
-
-# Run omega fit on a single galaxy
-python src/fit.py --galaxy M33 --plot
-```
+Reviewers and readers can reproduce the exact figures and statistical analyses found in the manuscript using the provided Jupyter Notebooks:
 
 ## Notebooks
 
-| #   | Notebook                                                                   | Description                                                |
-| --- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                      | Pipeline validation against Corbelli 2014 data             |
-| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb) | Mechanism test: kinematic boost vs. force addition         |
-| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                  | Rational taper and tanh taper on M33                       |
-| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization   |
-| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity |
-| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types        |
-| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies |
+| #   | Notebook                                                                   | Description                                                                                      |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                      | Pipeline validation against Corbelli 2014 data                                                   |
+| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb) | Mechanism test: kinematic boost vs. force addition                                               |
+| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                  | Rational taper and tanh taper on M33                                                             |
+| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization                                         |
+| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity                                       |
+| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types                                              |
+| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies  |
 | 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC) |
 
-## Project Structure
+## Quick Start
 
-- `src/` — Core Python modules (database, physics, ingestion, fitting)
-- `tests/` — Pytest test suite
-- `notebooks/` — Analysis and visualization notebooks
-- `data/raw/` — Original SPARC data files
-- `data/extracted/` — Data extracted from published papers (e.g., Corbelli 2014 Table 1)
-- `data/processed/` — SQLite database
-- `results/figures/` — Publication-quality plots
-- `results/tables/` — Summary statistics and fit results (CSV)
-- `docs/` — Methodology, results, and internal documentation
+The pipeline is written in Python and uses SQLite for data management.
+
+```bash
+# Clone the repository
+git clone [https://github.com/JustinSchneider/baryonic-omega-analysis.git](https://github.com/JustinSchneider/baryonic-omega-analysis.git)
+cd baryonic-omega-analysis
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize database and ingest SPARC/M33 data
+python src/database.py --init
+python src/ingest.py --m33
+python src/ingest.py --mrt data/raw/MassModels_Lelli2016c.mrt --metadata data/raw/SPARC_Lelli2016c.mrt
+
+# Run the comparative fit on a single galaxy (e.g., NGC 3198)
+python src/fit.py --galaxy NGC3198 --plot
+```
+
+## Repository Structure
+
+- `src/` — Core Python modules (database, physics, ingestion, fitting pipeline)
+- `notebooks/` — Analysis and visualization notebooks mapped to manuscript figures
+- `data/` — Raw SPARC data (LMS16) and the compiled SQLite database
+- `results/figures/` — Publication-quality plots generated by the notebooks
+- `results/tables/` — Full fit parameters and summary statistics (CSV)
+- `docs/` — Internal documentation and mathematical methodology
 
 ## Data Sources
 
 - **SPARC Database** (Lelli, McGaugh, & Schombert 2016): 175 disk galaxies with Spitzer photometry and rotation curves. http://astroweb.cwru.edu/SPARC/
 - **M33 Calibration** (Corbelli et al. 2014): Surface density profiles from Table 1, converted to velocity components via Casertano (1983) thin-disk method.
 
-## References
+## Citation
 
-1. Flynn, D. C. & Cannaliato, J. (2025). "A New Empirical Fit to Galaxy Rotation Curves."
-2. Corbelli, E. & Salucci, P. (2000). MNRAS, 311, 441. "The Extended Rotation Curve and the Dark Matter Halo of M33."
-3. Corbelli, E., et al. (2014). A&A, 572, A23. "Dynamical signatures of a $\Lambda$CDM-halo and the distribution of the baryons in M33."
-4. Casertano, S. (1983). MNRAS, 203, 735. "Rotation curve of the edge-on spiral galaxy NGC 5907."
-5. Kass, R. E. & Raftery, A. E. (1995). JASA, 90, 773. "Bayes Factors."
-6. Lelli, F., McGaugh, S. S., & Schombert, J. M. (2016). AJ, 152, 157. "SPARC: Mass Models for 175 Disk Galaxies with Spitzer Photometry and Accurate Rotation Curves."
+(Citation details will be updated upon publication. For preprint inquiries, please reference the GitHub URL).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
