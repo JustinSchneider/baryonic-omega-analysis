@@ -18,6 +18,10 @@ $$V_{model}(R) = V_{bary}(R) + \frac{\omega R}{1 + R / R_t}$$
 
 The Tapered model introduces a transition radius $R_t$ where the linear correction saturates. Across 171 quality-controlled SPARC galaxies, we find a statistically significant empirical scaling relation where the saturation scale couples to the baryonic disk: $R_t \approx 2.4 R_d$.
 
+## Gemini Gem
+
+An LLM has been configured to [engage with this research on Google Gemini](https://gemini.google.com/gem/1XhA_9T5KTLUSwiFIHFfAHLfPLNAtQLt5). This chatbot is capable of answering many questions about the analysis performed in this work, though as is always the case, responses should be verified via the data directly, available in this repository.
+
 ## Reproducing the Manuscript Figures
 
 Reviewers and readers can reproduce the exact figures and statistical analyses found in the manuscript using the provided Jupyter Notebooks:

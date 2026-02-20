@@ -1,0 +1,23 @@
+{
+    // LaTeX Workshop — disable auto-build on save
+    "latex-workshop.latex.autoBuild.run": "never",
+
+    // Direct all LaTeX auxiliary/output files into the build.py output directory
+    // instead of polluting the publication/ source directory.
+    "latex-workshop.latex.outDir": "%DIR%/output/OJA",
+
+    // Tell LaTeX Workshop to look for the PDF in the outDir, not next to the .tex
+    "latex-workshop.latex.build.forceRecipeUsage": false,
+
+    // Hide LaTeX auxiliary files from the VS Code file explorer
+    "files.exclude": {
+        "**/*.aux": true,
+        "**/*.bbl": true,
+        "**/*.blg": true,
+        "**/*.fdb_latexmk": true,
+        "**/*.fls": true,
+        "**/*.log": true,
+        "**/*.synctex.gz": true,
+        "**/*.synctex(busy)": true
+    }
+}
