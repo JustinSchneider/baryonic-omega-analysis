@@ -12,6 +12,8 @@ The empirical "Omega" ($\omega$) velocity correction model (Flynn & Cannaliato 2
 
 **Hypothesis:** Fitting $\omega$ to the baryonic potential should yield a tighter, more universal correlation than fitting to the Keplerian decline alone.
 
+**Revised Hypothesis (Schneider 2026):** The inclusion of a rational taper to the baryonic potential will not only eliminate the unphysical linear divergence of the Flynn (2025) model but will yield a saturation velocity ($V_{sat}$) that scales with the total baryonic mass, effectively recovering the Baryonic Tully-Fisher Relation (BTFR) without dark matter halos.
+
 ---
 
 ## 2. Data Sources
@@ -166,6 +168,14 @@ Two free parameters: $V_{max}$ (km/s) and $R_t$ (kpc). The effective inner-disk 
 - **Bounds:** $\omega \in [0, 50]$, $R_t \in [0.1, 50]$ (rational); $V_{max} \in [0, 500]$, $R_t \in [0.1, 50]$ (tanh)
 - **Degrees of freedom:** $\text{dof} = n - 2$ (two free parameters)
 
+**Diagnostics for Model C (Rational Taper):**
+
+| Parameter | Description |
+|-----------|-------------|
+| $\omega$ | Initial linear slope — baryonic coupling strength (km/s/kpc) |
+| $R_t$ | Transition/saturation radius (kpc) |
+| $V_{sat}$ | Derived saturation velocity: $V_{sat} = \omega \cdot R_t$ (km/s), used for population-level BTFR analysis |
+
 **Implementation:** `src/physics.py :: fit_omega_tapered()` (rational), `fit_omega_tanh()` (tanh)
 **Results:** `results/tables/M33_tapered_results.csv`
 
@@ -189,6 +199,29 @@ If $k$ is approximately constant across galaxies, this implies the saturation sc
 
 **Implementation:** `src/physics.py :: fit_omega_tapered_kRd()`
 **Results:** `results/tables/SPARC_tapered_batch_results.csv`
+
+### 4.7 Asymptotic Velocity and BTFR Recovery (Schneider 2026)
+
+While the Rational Taper (Model C) is defined by its geometric transition $R_t$, its primary physical significance lies in the **asymptotic saturation velocity** ($V_{sat}$).
+
+**Mathematical Derivation:**
+
+Taking the limit of the Rational Taper model as $R \to \infty$:
+
+$$V_{sat} = \lim_{R \to \infty} \left[ V_{bary}(R) + \frac{\omega R}{1 + R/R_t} \right]$$
+
+Since $V_{bary} \to 0$ (Keplerian decline) at large radii and the rational term dominates, the expression simplifies to the product of the kinematic slope and the transition radius:
+
+$$V_{sat} = \omega \cdot R_t$$
+
+**Baryonic Tully-Fisher Relation (BTFR) Test:**
+
+To validate the physical reality of these parameters, we test the scaling of $V_{sat}$ against the total baryonic mass ($M_b$) derived from the SPARC catalog.
+
+- **Power Law Fit:** $\log(V_{sat}) = \alpha \log(M_b) + \beta$
+- **Result:** The model recovers a power-law slope of **$0.221 \pm 0.026$**, aligning with the expected $V \propto M^{0.25}$ scaling of the BTFR. This demonstrates that the tapered parameters are not merely "curve-fitting" artifacts but are coupled to global galactic mass distributions.
+
+The BIC preference for Model C over the linear model (74.3% of well-fit galaxies) combined with the BTFR recovery provides both statistical and physical evidence for the model's superiority.
 
 ---
 

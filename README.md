@@ -6,6 +6,12 @@
 This repository contains the data, fitting pipeline, and full results table for the manuscript:
 **"A Baryonically-Coupled Rational Taper Model for Galaxy Rotation Curves: Evidence from the Full SPARC Catalog"** (Schneider, 2026; _Awaiting submission_).
 
+## Key Finding
+
+![Dynamic Coupling: Asymptotic Velocity vs. Baryonic Mass](results/figures/pub_fig2_dynamic_coupling.png)
+
+The Rational Taper model ($V_{model} = V_{bary} + \omega R / (1 + R/R_t)$) saturates at an asymptotic velocity $V_{sat} = \omega \cdot R_t$. Across 127 well-fit SPARC galaxies, $V_{sat}$ scales with total baryonic mass as a power law with slope $0.221 \pm 0.026$ — consistent with the expected $V \propto M^{0.25}$ Baryonic Tully-Fisher Relation ($R^2 = 0.364$, $p = 6.2 \times 10^{-14}$). This demonstrates that the model's parameters are not arbitrary curve-fitting artifacts but are physically coupled to global galactic mass distributions.
+
 ## Overview
 
 This project explores a phenomenological extension to the empirical velocity correction model proposed by Flynn & Cannaliato (2025). By upgrading from point-mass approximations to full baryonic mass decompositions using the SPARC database, we test two kinematic models:
@@ -16,7 +22,7 @@ $$V_{model}(R) = V_{bary}(R) + \omega R$$
 **2. Rational Taper Model (Schneider 2026):**
 $$V_{model}(R) = V_{bary}(R) + \frac{\omega R}{1 + R / R_t}$$
 
-The Tapered model introduces a transition radius $R_t$ where the linear correction saturates. Across 171 quality-controlled SPARC galaxies, we find a statistically significant empirical scaling relation where the saturation scale couples to the baryonic disk: $R_t \approx 2.4 R_d$.
+The Tapered model introduces a transition radius $R_t$ where the linear correction saturates to $V_{sat} = \omega \cdot R_t$. Across 171 quality-controlled SPARC galaxies, BIC selects the Tapered model in 74.3% of cases, and the saturation scale couples to the baryonic disk: $R_t \approx 2.4 R_d$.
 
 ## Gemini Gem
 
@@ -28,16 +34,17 @@ Reviewers and readers can reproduce the exact figures and statistical analyses f
 
 ## Notebooks
 
-| #   | Notebook                                                                   | Description                                                                                      |
-| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                      | Pipeline validation against Corbelli 2014 data                                                   |
-| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb) | Mechanism test: kinematic boost vs. force addition                                               |
-| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                  | Rational taper and tanh taper on M33                                                             |
-| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization                                         |
-| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity                                       |
-| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types                                              |
-| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies  |
-| 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC) |
+| #   | Notebook                                                                   | Description                                                                                                                          |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                      | Pipeline validation against Corbelli 2014 data                                                                                       |
+| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb) | Mechanism test: kinematic boost vs. force addition                                                                                   |
+| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                  | Rational taper and tanh taper on M33                                                                                                 |
+| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization                                                                             |
+| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity                                                                           |
+| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types                                                                                  |
+| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies                                      |
+| 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC)                                     |
+| 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)              | Generates the four manuscript-ready figures: M33 calibration, BTFR recovery, data truncation artifact, and $\Delta$ BIC distribution |
 
 ## Quick Start
 
@@ -45,7 +52,7 @@ The pipeline is written in Python and uses SQLite for data management.
 
 ```bash
 # Clone the repository
-git clone [https://github.com/JustinSchneider/baryonic-omega-analysis.git](https://github.com/JustinSchneider/baryonic-omega-analysis.git)
+git clone https://github.com/JustinSchneider/baryonic-omega-analysis.git
 cd baryonic-omega-analysis
 
 # Install dependencies
@@ -80,4 +87,4 @@ python src/fit.py --galaxy NGC3198 --plot
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
