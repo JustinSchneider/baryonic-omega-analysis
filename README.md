@@ -45,6 +45,7 @@ Reviewers and readers can reproduce the exact figures and statistical analyses f
 | 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies                                      |
 | 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC)                                     |
 | 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)              | Generates the four manuscript-ready figures: M33 calibration, BTFR recovery, data truncation artifact, and $\Delta$ BIC distribution |
+| 10  | [Surface Brightness vs. $\omega$](notebooks/10_sigma0_vs_omega_correlation.ipynb) | Pearson/Spearman correlation of $\omega$ against central surface brightness $\Sigma_0$; establishes that model preference is $\Sigma_0$-independent while coupling amplitude is weakly modulated by baryonic surface density |
 
 ## Quick Start
 

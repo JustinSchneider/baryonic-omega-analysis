@@ -332,6 +332,25 @@ Head-to-head comparison of the Linear and Tapered models across 7 galaxies spann
 **Implementation:** Notebook 06 (with robust tapered fitter using multiple initial guesses)
 **Results:** `results/tables/model_gallery_validation.csv`
 
+### 7.5 Surface Brightness vs. $\omega$ Correlation (Notebook 10)
+
+The Surface Brightness Regime Analysis (Section 7 of the manuscript) uses a Mann-Whitney U-test to confirm that model *preference* ($\Delta$BIC) is statistically independent of $\Sigma_0$ ($p = 0.171$). This section tests the complementary question: is the *magnitude* of the coupling ($\omega$) itself a function of baryonic surface density?
+
+**Method:**
+- Input: `results/tables/phase_iii_full_results.csv` (171-galaxy full results table)
+- Pearson and Spearman correlation tests on $\log_{10}(\omega_T)$ vs. $\log_{10}(\Sigma_0)$, run on both (i) the full working sample and (ii) the Tapered-preferred subsample (where $\omega_T$ is independently resolved)
+- OLS linear regression in log-log space to characterize the trend
+
+**Results (Tapered $\omega$, full working sample):**
+- Pearson $r = -0.214$, $p < 0.01$
+- Spearman $r = -0.201$, $p < 0.01$
+- $R^2 \approx 4.5\%$
+
+**Interpretation:** A statistically significant but weak negative correlation exists between $\omega$ and $\Sigma_0$. LSB galaxies — which exhibit larger dynamical mass discrepancies at all radii (McGaugh et al. 2016) — require a slightly higher kinematic correction per kpc. The weak effect size ($R^2 \approx 4.5\%$) indicates that baryonic surface density is a secondary modulating factor, not the primary driver of $\omega$. The dominant variance in $\omega$ is set by a universal underlying mechanism. This is the kinematic analogue of the Radial Acceleration Relation: the correction magnitude is aware of the local baryonic potential, but is not determined by it alone.
+
+**Implementation:** Notebook 10
+**Output figure:** `results/figures/nb10_sigma0_vs_omega.pdf`
+
 ---
 
 ## References
@@ -343,4 +362,5 @@ Head-to-head comparison of the Linear and Tapered models across 7 galaxies spann
 5. Flynn, D. C. & Cannaliato, J. (2025). "A New Empirical Fit to Galaxy Rotation Curves."
 6. Kass, R. E. & Raftery, A. E. (1995). JASA, 90, 773. "Bayes Factors."
 7. Lelli, F., McGaugh, S. S., & Schombert, J. M. (2016). AJ, 152, 157. "SPARC: Mass Models for 175 Disk Galaxies with Spitzer Photometry and Accurate Rotation Curves."
-8. Schwarz, G. (1978). Annals of Statistics, 6, 461. "Estimating the Dimension of a Model."
+8. McGaugh, S. S., Lelli, F., & Schombert, J. M. (2016). PRL, 117, 201101. "Radial Acceleration Relation in Rotationally Supported Galaxies."
+9. Schwarz, G. (1978). Annals of Statistics, 6, 461. "Estimating the Dimension of a Model."
