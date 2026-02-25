@@ -26,7 +26,7 @@ The Tapered model introduces a transition radius $R_t$ where the linear correcti
 
 ## Gemini Gem
 
-An LLM has been configured to [engage with this research on Google Gemini](https://gemini.google.com/gem/1XhA_9T5KTLUSwiFIHFfAHLfPLNAtQLt5). This chatbot is capable of answering many questions about the analysis performed in this work, though as is always the case, responses should be verified via the data directly, available in this repository.
+An LLM has been configured to [engage with this research on Google Gemini](https://tinyurl.com/schneider-2026). This chatbot is capable of answering many questions about the analysis performed in this work, though as is always the case, responses should be verified via the data directly, available in this repository.
 
 ## Reproducing the Manuscript Figures
 
@@ -34,17 +34,17 @@ Reviewers and readers can reproduce the exact figures and statistical analyses f
 
 ## Notebooks
 
-| #   | Notebook                                                                   | Description                                                                                                                          |
-| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                      | Pipeline validation against Corbelli 2014 data                                                                                       |
-| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb) | Mechanism test: kinematic boost vs. force addition                                                                                   |
-| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                  | Rational taper and tanh taper on M33                                                                                                 |
-| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                     | 118-galaxy batch fit with $k \cdot R_d$ parameterization                                                                             |
-| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)            | Population split, density coupling, $\Upsilon$ sensitivity                                                                           |
-| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types                                                                                  |
-| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies                                      |
-| 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC)                                     |
-| 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)              | Generates the four manuscript-ready figures: M33 calibration, $V_{\rm sat}$–$M_{\rm bary}$ scaling, data truncation artifact, and $\Delta$BIC distribution |
+| #   | Notebook                                                                          | Description                                                                                                                                                                                                                  |
+| --- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01  | [M33 Calibration](notebooks/01_m33_calibration.ipynb)                             | Pipeline validation against Corbelli 2014 data                                                                                                                                                                               |
+| 02  | [Linear vs Quadrature](notebooks/02_linear_vs_quadrature_comparison.ipynb)        | Mechanism test: kinematic boost vs. force addition                                                                                                                                                                           |
+| 03  | [Tapered Models](notebooks/03_tapered_linear_model.ipynb)                         | Rational taper and tanh taper on M33                                                                                                                                                                                         |
+| 04  | [SPARC Batch](notebooks/04_sparc_batch_analysis.ipynb)                            | 118-galaxy batch fit with $k \cdot R_d$ parameterization                                                                                                                                                                     |
+| 05  | [Phase II Analysis](notebooks/05_phase2_density_coupling.ipynb)                   | Population split, density coupling, $\Upsilon$ sensitivity                                                                                                                                                                   |
+| 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                                 | Head-to-head Linear vs. Tapered across galaxy types                                                                                                                                                                          |
+| 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)                 | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies                                                                                                                              |
+| 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                                   | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC)                                                                                                                             |
+| 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)                     | Generates the four manuscript-ready figures: M33 calibration, $V_{\rm sat}$–$M_{\rm bary}$ scaling, data truncation artifact, and $\Delta$BIC distribution                                                                   |
 | 10  | [Surface Brightness vs. $\omega$](notebooks/10_sigma0_vs_omega_correlation.ipynb) | Pearson/Spearman correlation of $\omega$ against central surface brightness $\Sigma_0$; establishes that model preference is $\Sigma_0$-independent while coupling amplitude is weakly modulated by baryonic surface density |
 
 ## Quick Start
