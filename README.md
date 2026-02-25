@@ -10,7 +10,7 @@ This repository contains the data, fitting pipeline, and full results table for 
 
 ![Dynamic Coupling: Asymptotic Velocity vs. Baryonic Mass](results/figures/pub_fig2_dynamic_coupling.png)
 
-The Rational Taper model ( $V_{model} = V_{bary} + \omega R / (1 + R/R_t)$ ) saturates at an asymptotic velocity $V_{sat} = \omega \cdot R_t$. Across 127 well-fit SPARC galaxies, $V_{sat}$ scales with total baryonic mass as a power law with slope $0.221 \pm 0.026$ — consistent with the canonical Baryonic Tully-Fisher Relation ($R^2 = 0.364$, $p = 6.2 \times 10^{-14}$). This consistency is mediated by the dynamic transition: the taper radius $R_t$ — the scale at which the kinematic correction saturates — is significantly correlated with the photometric disk scale length $R_d$, linking local baryonic structure to global kinematic scaling.
+The Rational Taper model ( $V_{model} = V_{bary} + \omega R / (1 + R/R_t)$ ) saturates at an asymptotic velocity $V_{sat} = \omega \cdot R_t$. Across the 127 Tapered-model-preferred galaxies (of 171 quality-controlled SPARC galaxies; BIC selects the Tapered form in 74.3% of cases), $V_{sat}$ scales with total baryonic mass as a power law with slope $0.221 \pm 0.026$ — consistent with the canonical Baryonic Tully-Fisher Relation ($R^2 = 0.364$, $p = 6.2 \times 10^{-14}$). This consistency is mediated by the dynamic transition: the taper radius $R_t$ — the scale at which the kinematic correction saturates — is significantly correlated with the photometric disk scale length $R_d$, linking local baryonic structure to global kinematic scaling.
 
 ## Overview
 
@@ -23,6 +23,8 @@ $$V_{model}(R) = V_{bary}(R) + \omega R$$
 $$V_{model}(R) = V_{bary}(R) + \frac{\omega R}{1 + R / R_t}$$
 
 The Tapered model introduces a transition radius $R_t$ where the linear correction saturates to $V_{sat} = \omega \cdot R_t$. Across 171 quality-controlled SPARC galaxies, BIC selects the Tapered model in 74.3% of cases, and the saturation scale correlates with the baryonic disk scale: median $R_t \approx 2.4 R_d$.
+
+The kinematic correction is applied additively (rather than in quadrature), consistent with the FC25 baseline and preserving the physical interpretation of a non-mass kinematic correction. A catalog-wide empirical comparison (`results/tables/additive_vs_quadrature_catalog.csv`) shows that quadrature yields marginally lower RMSE in 66.1% of cases (113 of 171 galaxies), but the median RMSE difference is only 0.32 km/s. The additive form is retained for physical and methodological reasons detailed in Section 4.4 of the manuscript. A mass-to-light ratio sensitivity analysis (Section 3.5; data in `results/tables/upsilon_sensitivity.csv`) confirms that while individual parameters $\omega$ and $R_t$ respond to $\Upsilon_\mathrm{disk}$ variation, their product $V_\mathrm{sat} = \omega R_t$ is substantially more stable (variation $\lesssim 28\%$ across $\Upsilon \in [0.3, 0.8]$).
 
 ## Gemini Gem
 
