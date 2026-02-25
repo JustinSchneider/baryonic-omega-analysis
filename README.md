@@ -51,7 +51,7 @@ Reviewers and readers can reproduce the exact figures and statistical analyses f
 
 ## Quick Start
 
-The pipeline is written in Python and uses SQLite for data management.
+The pipeline is written in Python and uses SQLite for data management. All raw data files and the compiled database are included in the repository — no separate download or ingestion step is required to reproduce the manuscript figures.
 
 ```bash
 # Clone the repository
@@ -61,12 +61,19 @@ cd baryonic-omega-analysis
 # Install dependencies
 pip install -r requirements.txt
 
-# Initialize database and ingest SPARC/M33 data
+# Open Jupyter and run the notebooks in order
+jupyter lab
+```
+
+The notebooks are self-contained: Notebook 01 initializes the database and ingests M33 data on first run, and Notebook 07 reads SPARC data directly from the included `.mrt` files. For developers who want to reinitialize or re-ingest from scratch:
+
+```bash
+# (Optional) Manually reinitialize and reingest
 python src/database.py --init
 python src/ingest.py --m33
 python src/ingest.py --mrt data/raw/MassModels_Lelli2016c.mrt --metadata data/raw/SPARC_Lelli2016c.mrt
 
-# Run the comparative fit on a single galaxy (e.g., NGC 3198)
+# (Optional) Run the comparative fit on a single galaxy
 python src/fit.py --galaxy NGC3198 --plot
 ```
 
