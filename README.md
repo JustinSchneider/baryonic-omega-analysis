@@ -10,7 +10,7 @@ This repository contains the data, fitting pipeline, and full results table for 
 
 ![Dynamic Coupling: Asymptotic Velocity vs. Baryonic Mass](results/figures/pub_fig2_dynamic_coupling.png)
 
-The Rational Taper model ($V_{model} = V_{bary} + \omega R / (1 + R/R_t)$) saturates at an asymptotic velocity $V_{sat} = \omega \cdot R_t$. Across 127 well-fit SPARC galaxies, $V_{sat}$ scales with total baryonic mass as a power law with slope $0.221 \pm 0.026$ — consistent with the expected $V \propto M^{0.25}$ Baryonic Tully-Fisher Relation ($R^2 = 0.364$, $p = 6.2 \times 10^{-14}$). This demonstrates that the model's parameters are not arbitrary curve-fitting artifacts but are physically coupled to global galactic mass distributions.
+The Rational Taper model ($V_{model} = V_{bary} + \omega R / (1 + R/R_t)$) saturates at an asymptotic velocity $V_{sat} = \omega \cdot R_t$. Across 127 well-fit SPARC galaxies, $V_{sat}$ scales with total baryonic mass as a power law with slope $0.221 \pm 0.026$ — consistent with the canonical Baryonic Tully-Fisher Relation ($R^2 = 0.364$, $p = 6.2 \times 10^{-14}$). This consistency is mediated by the dynamic transition: the taper radius $R_t$ — the scale at which the kinematic correction saturates — is significantly correlated with the photometric disk scale length $R_d$, linking local baryonic structure to global kinematic scaling.
 
 ## Overview
 
@@ -22,7 +22,7 @@ $$V_{model}(R) = V_{bary}(R) + \omega R$$
 **2. Rational Taper Model (Schneider 2026):**
 $$V_{model}(R) = V_{bary}(R) + \frac{\omega R}{1 + R / R_t}$$
 
-The Tapered model introduces a transition radius $R_t$ where the linear correction saturates to $V_{sat} = \omega \cdot R_t$. Across 171 quality-controlled SPARC galaxies, BIC selects the Tapered model in 74.3% of cases, and the saturation scale couples to the baryonic disk: $R_t \approx 2.4 R_d$.
+The Tapered model introduces a transition radius $R_t$ where the linear correction saturates to $V_{sat} = \omega \cdot R_t$. Across 171 quality-controlled SPARC galaxies, BIC selects the Tapered model in 74.3% of cases, and the saturation scale correlates with the baryonic disk scale: median $R_t \approx 2.4 R_d$.
 
 ## Gemini Gem
 
@@ -44,7 +44,7 @@ Reviewers and readers can reproduce the exact figures and statistical analyses f
 | 06  | [Model Gallery](notebooks/06_model_gallery.ipynb)                          | Head-to-head Linear vs. Tapered across galaxy types                                                                                  |
 | 07  | [Full Catalog Analysis](notebooks/07_full_catalog_analysis.ipynb)          | Phase III: BIC selection, $R_t$–$R_d$ scaling, $\Sigma_0$ regime test on all 175 SPARC galaxies                                      |
 | 08  | [Full Gallery](notebooks/08_full_gallery.ipynb)                            | Rotation-curve gallery for all 171 quality-controlled galaxies (29 pages, sorted by $\Delta$BIC)                                     |
-| 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)              | Generates the four manuscript-ready figures: M33 calibration, BTFR recovery, data truncation artifact, and $\Delta$ BIC distribution |
+| 09  | [Publication Figures](notebooks/09_publication_figures.ipynb)              | Generates the four manuscript-ready figures: M33 calibration, $V_{\rm sat}$–$M_{\rm bary}$ scaling, data truncation artifact, and $\Delta$BIC distribution |
 | 10  | [Surface Brightness vs. $\omega$](notebooks/10_sigma0_vs_omega_correlation.ipynb) | Pearson/Spearman correlation of $\omega$ against central surface brightness $\Sigma_0$; establishes that model preference is $\Sigma_0$-independent while coupling amplitude is weakly modulated by baryonic surface density |
 
 ## Quick Start
