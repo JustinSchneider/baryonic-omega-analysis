@@ -2,7 +2,7 @@
 
 **Authors:** Justin Schneider, David C. Flynn, Jim Cannaliato
 **Last Updated:** February 2026
-**Phase:** Phase I & II complete — Infrastructure, Calibration, Batch Analysis, and Robustness
+**Phase:** Phase I, II & III complete — Infrastructure, Calibration, Batch Analysis, Robustness, and Full Catalog Analysis (171 galaxies)
 
 ---
 
@@ -69,8 +69,7 @@ For HI gas, a helium correction factor of 1.33 is applied: $\Sigma_{gas} = 1.33 
 | Disk M/L | $\Upsilon_{disk}$ | 0.5 | 0.3 – 0.8 | SPARC default (3.6 $\mu$m band) |
 | Bulge M/L | $\Upsilon_{bulge}$ | 0.7 | 0.3 – 0.8 | SPARC default |
 
-**Phase I & II (current):** $\Upsilon$ values are held constant at SPARC defaults. Sensitivity analysis (Notebook 05) quantifies the impact of this assumption across galaxy types (see Section 7).
-**Future work (Phase III):** $\Upsilon$ may be treated as a free parameter in the fit (bounded 0.3–0.8).
+**All Phases (I–III):** $\Upsilon$ values are held constant at SPARC defaults throughout all analyses. Sensitivity analysis (Notebook 05) quantifies the impact of this assumption across galaxy types (see Section 7). Treating $\Upsilon$ as a free parameter was considered but not implemented; the resulting degeneracy with $\omega$ and $R_t$ would leave most fits under-constrained.
 
 ---
 
@@ -165,7 +164,7 @@ Two free parameters: $V_{max}$ (km/s) and $R_t$ (kpc). The effective inner-disk 
 **Fitting details:**
 - **Optimizer:** `scipy.optimize.curve_fit` with `absolute_sigma=True`
 - **Initial guesses:** $\omega_0 = 5$, $R_{t,0} = 5$ (rational); $V_{max,0} = 80$, $R_{t,0} = 5$ (tanh)
-- **Bounds:** $\omega \in [0, 50]$, $R_t \in [0.1, 50]$ (rational); $V_{max} \in [0, 500]$, $R_t \in [0.1, 50]$ (tanh)
+- **Bounds:** $\omega \in [0, 50]$, $R_t \in [0.1, 50]$ kpc (rational; Phase I/II default); $V_{max} \in [0, 500]$, $R_t \in [0.1, 50]$ (tanh). **Note:** Phase III (`v4_phase3_catalog`) uses $\omega \in [0, 200]$ and $R_t \in [0.1, 5 R_{max}]$ to accommodate the full SPARC catalog range.
 - **Degrees of freedom:** $\text{dof} = n - 2$ (two free parameters)
 
 **Diagnostics for Model C (Rational Taper):**
@@ -240,6 +239,7 @@ The BIC preference for Model C over the linear model (74.3% of well-fit galaxies
 - **Target:** `scipy.curve_fit` converges for >90% of SPARC galaxies
 - **Phase I result:** 118/118 galaxies achieved numerical convergence (100%); 89/118 (75%) met the $\chi^2_\nu < 5$ quality threshold
 - **Phase II result:** 19/19 boundary-solution galaxies re-converged with constrained $R_t$; 7/7 gallery galaxies converged for both linear and tapered models
+- **Phase III result (Full Catalog):** 171/171 quality-controlled galaxies converged for both Linear and Tapered models (100%). Four galaxies removed by QC filters (inclination, data count, or RMSE threshold). BIC breakdown: 127 (74.3%) Tapered-preferred, 27 (15.8%) Linear-preferred, 17 (9.9%) indistinguishable. Results in `results/tables/phase_iii_full_results.csv`.
 - **Edge cases:** Galaxies with $V_{obs} < V_{bary}$ anywhere are flagged in the database
 
 ### 5.3 Database Integrity
@@ -282,6 +282,7 @@ Each fit stores a `method_version` string so results from different fitting algo
 | `v2_tapered_reanalysis` | M33 tapered re-analysis for comparison | II |
 | `v3_gallery_linear` | Gallery linear fits (Notebook 06) | II |
 | `v3_gallery_tapered` | Gallery robust tapered fits (multiple initial guesses) | II |
+| `v4_phase3_catalog` | Full 171-galaxy SPARC catalog fit: Linear + Tapered, $\omega \in [0, 200]$, $R_t \in [0.1, 5 R_{max}]$, four-start optimizer | III |
 
 ---
 
@@ -296,6 +297,8 @@ For the M33 calibration, we test the sensitivity of $\omega$ to the disk mass-to
 - Results stored in `results/tables/M33_sensitivity.csv`
 
 ### 7.2 Cross-Galaxy Robustness Test (Notebook 05)
+
+**Scope:** Phase II analysis on 3 representative galaxies from the Phase I sample. The Phase III full-catalog analysis (Notebook 07, 171 galaxies) confirmed this conclusion holds population-wide: the $\Sigma_0$ vs. $\omega$ weak negative correlation ($R^2 \approx 4.5\%$, Section 7.5) is consistent with mass-to-light sensitivity being a secondary modulating factor rather than the primary driver of $\omega$ variance.
 
 Three representative galaxies tested at $\Upsilon_d \in \{0.3, 0.5, 0.8\}$ to assess whether the omega model is an artifact of the baryonic decomposition:
 
@@ -349,7 +352,7 @@ The Surface Brightness Regime Analysis (Section 7 of the manuscript) uses a Mann
 **Interpretation:** A statistically significant but weak negative correlation exists between $\omega$ and $\Sigma_0$. LSB galaxies — which exhibit larger dynamical mass discrepancies at all radii (McGaugh et al. 2016) — require a slightly higher kinematic correction per kpc. The weak effect size ($R^2 \approx 4.5\%$) indicates that baryonic surface density is a secondary modulating factor, not the primary driver of $\omega$. The dominant variance in $\omega$ is set by a universal underlying mechanism. This is the kinematic analogue of the Radial Acceleration Relation: the correction magnitude is aware of the local baryonic potential, but is not determined by it alone.
 
 **Implementation:** Notebook 10
-**Output figure:** `results/figures/nb10_sigma0_vs_omega.pdf`
+**Output figure:** `results/figures/nb10_sigma0_vs_omega.png`
 
 ---
 
