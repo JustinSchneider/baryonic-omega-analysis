@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 This repository contains the data, fitting pipeline, and full results table for the manuscript:
-**"A Baryonically-Coupled Rational Taper Model for Galaxy Rotation Curves: Evidence from the Full SPARC Catalog"** (Schneider, 2026; _Awaiting submission_).
+**"A Rational Taper Model for Galaxy Rotation Curves"** (Schneider, 2026; _Awaiting publication_).
 
 ## Key Finding
 
