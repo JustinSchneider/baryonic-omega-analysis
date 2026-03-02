@@ -1,10 +1,10 @@
 # Baryonic Coupling in Galaxy Rotation Curves
 
-[![Status: Under Review](https://img.shields.io/badge/Status-Under_Review-yellow.svg)]()
+[![Status: Under Consideration](https://img.shields.io/badge/Status-Under_Review-yellow.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 This repository contains the data, fitting pipeline, and full results table for the manuscript:
-**"A Rational Taper Model for Galaxy Rotation Curves"** (Schneider, 2026; _Awaiting publication_).
+**"A Rational Taper Model for Galaxy Rotation Curves"** (Schneider, 2026; _Under Consideration_).
 
 ## Key Finding
 
